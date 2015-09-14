@@ -32,8 +32,8 @@ SOFTWARE.
 #define SUNXI_GPIO_BASE		(0x01C20800)	
 
 //add for S500 LeMaker Guitar
-#define S500_CLOCK_BASE_BP	(0xB0160000)
-#define S500_GPIO_BASE_BP	(0xB01B0000)
+#define S500_CLOCK_BASE	(0xB0160000)
+#define S500_GPIO_BASE	(0xB01B0000)
 
 #define PAGE_SIZE  (4*1024)
 #define BLOCK_SIZE (4*1024)
@@ -87,8 +87,8 @@ int setup(void)
 	if(f_a20){
 		gpio_map = (uint32_t *)mmap( (caddr_t)gpio_mem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, GPIO_BASE_BP);
 	}else{ //add for guitar
-		gpio_map = (uint32_t *)mmap( (caddr_t)gpio_mem , BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, S500_GPIO_BASE_BP);
-		clk_map = (uint32_t *)mmap( (caddr_t)clk_mem , BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, S500_CLOCK_BASE_BP);
+		gpio_map = (uint32_t *)mmap( (caddr_t)gpio_mem , BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, S500_GPIO_BASE);
+		clk_map = (uint32_t *)mmap( (caddr_t)clk_mem , BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, S500_CLOCK_BASE);
 	}
 
 	if(lemakerDebug)
