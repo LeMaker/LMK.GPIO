@@ -1,6 +1,6 @@
 #/usr/bin/env python
 
-import RPi.GPIO as GPIO
+import LMK.GPIO as GPIO
 import time
 
 PIN_NUM = 11

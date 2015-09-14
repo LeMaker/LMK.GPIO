@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -27,6 +27,9 @@ SOFTWARE.
 #include "common.h"
 #include "soft_pwm.h"
 pthread_t threads;
+
+extern int f_a20;
+extern int f_s500;
 
 struct pwm
 {
@@ -97,19 +100,37 @@ void *pwm_thread(void *threadarg)
 
         if (p->dutycycle > 0.0)
         {
-            output_gpio(*(pinTobcm_BP + p->gpio), 1);
+	    if(f_a20){
+            	output_gpio(*(pinTobcm_BP + p->gpio), 1);
+	    } else if(f_s500){
+		output_gpio(*(pinTobcm_GT + p->gpio), 1);
+	    } else{
+		output_gpio(*(pinTobcm_BP + p->gpio), 1);
+	    }
             full_sleep(&p->req_on);
         }
 
         if (p->dutycycle < 100.0)
         {
-            output_gpio(*(pinTobcm_BP + p->gpio), 0);
+	    if(f_a20){
+                output_gpio(*(pinTobcm_BP + p->gpio), 0);
+            } else if(f_s500){
+                output_gpio(*(pinTobcm_GT + p->gpio), 0);
+            } else{
+                output_gpio(*(pinTobcm_BP + p->gpio), 0);
+            }
             full_sleep(&p->req_off);
         }
     }
 
     // clean up
-    output_gpio(*(pinTobcm_BP + p->gpio), 0);
+    if(f_a20){
+    	output_gpio(*(pinTobcm_BP + p->gpio), 0);
+    } else if(f_s500){
+	output_gpio(*(pinTobcm_GT + p->gpio), 0);
+    } else{
+	output_gpio(*(pinTobcm_BP + p->gpio), 0);
+    }
     remove_pwm(p->gpio);
     pthread_exit(NULL);
 }

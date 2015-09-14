@@ -1,5 +1,5 @@
 """
-Copyright (c) 2012-2014 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -33,15 +33,15 @@ classifiers = ['Development Status :: 5 - Production/Stable',
                'Topic :: Home Automation',
                'Topic :: System :: Hardware']
 
-setup(name             = 'RPi.GPIO',
-      version          = '0.5.8',
-      author           = 'Ben Croston',
-      author_email     = 'ben@croston.org',
-      description      = 'A module to control Raspberry Pi GPIO channels',
+setup(name             = 'LMK.GPIO',
+      version          = '0.0.1',
+      author           = 'LeMaker Team',
+      author_email     = 'support@lemaker.org',
+      description      = 'A module to control LeMaker Team SBC produtecs GPIO channels',
       long_description = open('CHANGELOG.txt').read(),
       license          = 'MIT',
-      keywords         = 'Raspberry Pi GPIO',
-      url              = 'http://sourceforge.net/projects/raspberry-gpio-python/',
+      keywords         = 'LeMaker Team GPIO',
+      url              = 'https://github.com/LeMaker/LMK.GPIO',
       classifiers      = classifiers,
-      packages         = ['RPi'],
-      ext_modules      = [Extension('RPi.GPIO', ['source/py_gpio.c', 'source/c_gpio.c', 'source/cpuinfo.c', 'source/event_gpio.c', 'source/soft_pwm.c', 'source/py_pwm.c', 'source/common.c', 'source/constants.c'])])
+      packages         = ['LMK'],
+      ext_modules      = [Extension('LMK.GPIO', ['source/py_gpio.c', 'source/c_gpio.c', 'source/cpuinfo.c', 'source/event_gpio.c', 'source/soft_pwm.c', 'source/py_pwm.c', 'source/common.c', 'source/constants.c'])])

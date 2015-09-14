@@ -1,5 +1,5 @@
 import serial,time
-import RPi.GPIO as GPIO
+import LMK.GPIO as GPIO
 
 ser = serial.Serial('/dev/ttyS1',115200,timeout = 1)
 #ser.open()

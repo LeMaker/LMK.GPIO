@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+import LMK.GPIO as GPIO
 import time
 
 channel = 7

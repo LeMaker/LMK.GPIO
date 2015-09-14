@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2012-2014 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -28,7 +28,7 @@ SOFTWARE.
 #include "constants.h"
 #include "common.h"
 
-static PyObject *rpi_revision;
+static PyObject *lmk_revision;
 static int gpio_warnings = 1;
 
 struct py_callback
@@ -68,11 +68,11 @@ static int mmap_gpio_mem(void)
 static PyObject *py_cleanup(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	int i;
-	int found = 0;
+	int found = 0,v = 0;
 	int channel = -666;
 	unsigned int gpio;
 	static char *kwlist[] = {"channel", NULL};
-
+    v = get_lmk_revision();
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist, &channel))
 		return NULL;
 
@@ -88,8 +88,12 @@ static PyObject *py_cleanup(PyObject *self, PyObject *args, PyObject *kwargs)
          // set everything back to input
          for (i=0; i<64; i++) {
             if (gpio_direction[i] != -1) {
-				//printf("Clean %d \n",i);
-				setup_gpio(*(pinTobcm_BP+i), INPUT, PUD_OFF);//take care
+				printf("Clean %d \n",i);
+				if(v == 2){
+					setup_gpio(*(pinTobcm_BP+i), INPUT, PUD_OFF);//take care
+				} else if(v == 3){
+					setup_gpio(*(pinTobcm_GT+i), INPUT, PUD_OFF);//take care
+				}
 				gpio_direction[i] = -1;
 				found = 1;
 				//printf("Clean Fnished %d \n",i);
@@ -128,10 +132,10 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
    int initial = -1;
    static char *kwlist[] = {"channel", "direction", "pull_up_down", "initial", NULL};
    int func;
+	
 
    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|ii", kwlist, &channel, &direction, &pud, &initial))
       return NULL;
-
    // check module has been imported cleanly
    if (setup_error)
    {
@@ -140,9 +144,10 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
    }
 
    unsigned int sys_gpio;
-   if (get_gpio_number(channel, &gpio, &sys_gpio))
+   if (get_gpio_number(channel, &gpio, &sys_gpio)){
       return NULL;
-
+ 
+   }
    if (direction != INPUT && direction != OUTPUT)
    {
       PyErr_SetString(PyExc_ValueError, "An invalid direction was passed to setup()");
@@ -158,10 +163,8 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
       PyErr_SetString(PyExc_ValueError, "Invalid value for pull_up_down - should be either PUD_OFF, PUD_UP or PUD_DOWN");
       return NULL;
    }
-
    if (mmap_gpio_mem())
       return NULL;
-
    func = gpio_function(gpio);
 #ifdef BAPI_DEBUG
    if (gpio_warnings &&                             // warnings enabled and
@@ -172,14 +175,12 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
    }
 #else
 #endif
-
    if (direction == OUTPUT && (initial == LOW || initial == HIGH))
    {
       output_gpio(gpio, initial);
    }
    setup_gpio(gpio, direction, pud);
    gpio_direction[sys_gpio] = direction;
-
    Py_RETURN_NONE;
 }
 
@@ -527,11 +528,12 @@ static PyObject *py_wait_for_edge(PyObject *self, PyObject *args)
 }
 
 // python function value = gpio_function(channel)
+
 static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
    int channel;
-   int f;
+   int f,v;
    PyObject *func;
 
    if (!PyArg_ParseTuple(args, "i", &channel))
@@ -543,7 +545,7 @@ static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 
    if (mmap_gpio_mem())
       return NULL;
-
+   v = get_lmk_revision();
    f = gpio_function(gpio);
 //printf("### %s: f=%d, gpio=%d ###\n",__func__, f, gpio);
      switch (f)
@@ -551,7 +553,8 @@ static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 		case 0 : f = INPUT; break;
 		case 1 : f = OUTPUT; break;
 		// ALT 0
-		case 4 : switch (gpio)
+		case 4 :if(v == 2){ //a20
+			 switch (gpio)
 				{
 					case 257 :
 					case 256 :
@@ -570,7 +573,23 @@ static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 					//case 29 : f = I2C; break;
 					default : f = MODE_UNKNOWN; break;
 				}
-				break;
+			}else if(v == 3) { //add for guitar
+			switch (gpio)
+                                {
+                                        case 131 : //GPIOE3
+                                        case 130 : f = I2C; break;//GPIOE2
+                                        case 87 : //GPIOC23
+                                        case 88 : //GPIOC24
+                                        case 89 : //GPIOC25
+                                        case 86 : f = SPI; break;//GPIOC22
+                                        case 40 : f = PWM; break;//GPIOB8
+					case 91 : //GPIOC27
+					case 90 : f = SERIAL; break;//GPIOD18
+                                        default : f = MODE_UNKNOWN; break;
+                                }
+
+			}
+			break;
 	// ALT 5
 	case 2 : if (gpio == 259 || gpio == 39) f = PWM; else f = MODE_UNKNOWN;
 			break;
@@ -610,7 +629,7 @@ static PyObject *py_setwarnings(PyObject *self, PyObject *args)
 
 static const char moduledocstring[] = "GPIO functionality of a Raspberry Pi using Python";
 
-PyMethodDef rpi_gpio_methods[] = {
+PyMethodDef lmk_gpio_methods[] = {
    {"setup", (PyCFunction)py_setup_channel, METH_VARARGS | METH_KEYWORDS, "Set up the GPIO channel, direction and (optional) pull/up down control\nchannel        - either board pin number or BCM number depending on which mode is set.\ndirection      - INPUT or OUTPUT\n[pull_up_down] - PUD_OFF (default), PUD_UP or PUD_DOWN\n[initial]      - Initial value for an output channel"},
    {"cleanup", (PyCFunction)py_cleanup, METH_VARARGS | METH_KEYWORDS, "Clean up by resetting all GPIO channels that have been used by this program to INPUT with no pullup/pulldown and no event detection\n[channel] - individual channel to clean up.  Default - clean every channel that has been used."},
    {"output", py_output_gpio, METH_VARARGS, "Output to a GPIO channel\nchannel - either board pin number or BCM number depending on which mode is set.\nvalue   - 0/1 or False/True or LOW/HIGH"},
@@ -627,12 +646,12 @@ PyMethodDef rpi_gpio_methods[] = {
 };
 
 #if PY_MAJOR_VERSION > 2
-static struct PyModuleDef rpigpiomodule = {
+static struct PyModuleDef lmkgpiomodule = {
    PyModuleDef_HEAD_INIT,
-   "RPi.GPIO",       // name of module
+   "LMK.GPIO",       // name of module
    moduledocstring,  // module documentation, may be NULL
    -1,               // size of per-interpreter state of the module, or -1 if the module keeps state in global variables.
-   rpi_gpio_methods
+   lmk_gpio_methods
 };
 #endif
 
@@ -646,12 +665,13 @@ PyMODINIT_FUNC initGPIO(void)
    PyObject *module = NULL;
 
 #if PY_MAJOR_VERSION > 2
-   if ((module = PyModule_Create(&rpigpiomodule)) == NULL)
+   if ((module = PyModule_Create(&lmkgpiomodule)) == NULL)
       return NULL;
 #else
-   if ((module = Py_InitModule3("RPi.GPIO", rpi_gpio_methods, moduledocstring)) == NULL)
+   if ((module = Py_InitModule3("LMK.GPIO", lmk_gpio_methods, moduledocstring)) == NULL)
       return;
 #endif
+   revision = get_lmk_revision();
 
    define_constants(module);
 
@@ -659,8 +679,8 @@ PyMODINIT_FUNC initGPIO(void)
       gpio_direction[i] = -1;
 
    // detect board revision and set up accordingly
-   revision = get_rpi_revision();
-D	printf("BAPI: revision(%d)\n",revision);
+   revision = get_lmk_revision();
+   printf("BOARD: revision(%d)\n",revision);
    if (revision == -1)
    {
       PyErr_SetString(PyExc_RuntimeError, "This module can only be run on a Raspberry Pi!");
@@ -672,31 +692,40 @@ D	printf("BAPI: revision(%d)\n",revision);
 #endif
    } else if (revision == 1) {
       pin_to_gpio = NULL;
-   } else { // assume revision 2
+   } else if (revision == 2){ // assume revision 2
       pin_to_gpio = &physToGpio_BP;			//here is the 'pin_to_gpio' initialization
+   } else {
+      pin_to_gpio = &physToGpio_GT;
    }
 
-   rpi_revision = Py_BuildValue("i", revision);
-   PyModule_AddObject(module, "RPI_REVISION", rpi_revision);
+   lmk_revision = Py_BuildValue("i", revision);
+   PyModule_AddObject(module, "LMK_REVISION", lmk_revision);
+
 
    // Add PWM class
-   if (PWM_init_PWMType() == NULL)
+   if (PWM_init_PWMType() == NULL){
 #if PY_MAJOR_VERSION > 2
       return NULL;
 #else
       return;
 #endif
+
+
+}
    Py_INCREF(&PWMType);
    PyModule_AddObject(module, "PWM", (PyObject*)&PWMType);
 
-   if (!PyEval_ThreadsInitialized())
+   if (!PyEval_ThreadsInitialized()){
       PyEval_InitThreads();
 
+   }
    // register exit functions - last declared is called first
    if (Py_AtExit(cleanup) != 0)
    {
       setup_error = 1;
       cleanup();
+
+
 #if PY_MAJOR_VERSION > 2
       return NULL;
 #else
@@ -708,6 +737,8 @@ D	printf("BAPI: revision(%d)\n",revision);
    {
       setup_error = 1;
       cleanup();
+
+
 #if PY_MAJOR_VERSION > 2
       return NULL;
 #else
@@ -716,8 +747,10 @@ D	printf("BAPI: revision(%d)\n",revision);
    }
 
 #if PY_MAJOR_VERSION > 2
+
    return module;
 #else
+
    return;
 #endif
 }

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-import RPi.GPIO as GPIO
+import LMK.GPIO as GPIO
 import time
 from threading import Timer
 
-SWITCH_PIN = 10
+SWITCH_PIN = 18
 GPIO.setmode(GPIO.BOARD)
-GPIO.setup(SWITCH_PIN,GPIO.IN,GPIO.PUD_DOWN)
+GPIO.setup(SWITCH_PIN,GPIO.IN,GPIO.PUD_UP)
 print "\n value_%d = %d\n" %(SWITCH_PIN,GPIO.input(SWITCH_PIN))
 
 GPIO.add_event_detect(SWITCH_PIN, GPIO.RISING,bouncetime=200)  # add rising edge detection on a channel

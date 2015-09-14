@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013-2014 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -25,7 +25,8 @@ SOFTWARE.
 #include "common.h"
 #include "c_gpio.h"
 #include "event_gpio.h"
-
+extern int f_a20;
+extern int f_s500;
 void define_constants(PyObject *module)
 {
 	high = Py_BuildValue("i", HIGH);
@@ -84,7 +85,7 @@ void define_constants(PyObject *module)
 
 	version = Py_BuildValue("s", "0.5.8");
 	PyModule_AddObject(module, "VERSION", version);
-	
+	if(f_a20){
 	PyModule_AddObject(module, "PA", Py_BuildValue("i", 0));
 	PyModule_AddObject(module, "PB", Py_BuildValue("i", 32));
 	PyModule_AddObject(module, "PC", Py_BuildValue("i", 64));
@@ -94,4 +95,11 @@ void define_constants(PyObject *module)
 	PyModule_AddObject(module, "PG", Py_BuildValue("i", 192));
 	PyModule_AddObject(module, "PH", Py_BuildValue("i", 224));
 	PyModule_AddObject(module, "PI", Py_BuildValue("i", 256));
+	}else{
+	PyModule_AddObject(module, "PA", Py_BuildValue("i", 0));
+        PyModule_AddObject(module, "PB", Py_BuildValue("i", 32));
+        PyModule_AddObject(module, "PC", Py_BuildValue("i", 64));
+        PyModule_AddObject(module, "PD", Py_BuildValue("i", 96));
+        PyModule_AddObject(module, "PE", Py_BuildValue("i", 128));
+	}
 }

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2012-2013 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -27,6 +27,7 @@ SOFTWARE.
 
 #define INPUT  1 // is really 0 for control register!
 #define OUTPUT 0 // is really 1 for control register!
+#define PWM_OUTPUT 2 
 #define ALT0   4
 
 #define HIGH 1

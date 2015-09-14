@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+import LMK.GPIO as GPIO
 
 validPins = [11,12,13,15]
 

@@ -1,39 +1,9 @@
 #!/usr/bin/env python
-"""
-Copyright (c) 2013-2014 Ben Croston
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
-"""This test suite assumes the following circuit is connected:
-GND_PIN = 6
-LED_PIN = 12 (with resistor to 0v)
-SWITCH_PIN = 18 (with 0.1 uF capacitor around switch) to 0v
-LOOP_IN = 16 connected with 1K resistor to LOOP_OUT
-LOOP_OUT = 22
-"""
-
 import sys
 import warnings
 import time
 from threading import Timer
-import RPi.GPIO as GPIO
+import LMK.GPIO as GPIO
 if sys.version[:3] == '2.6':
     import unittest2 as unittest
 else:
@@ -192,12 +162,12 @@ class TestSetWarnings(unittest.TestCase):
             self.assertEqual(w[0].category, RuntimeWarning) # a warning
 
 class TestVersions(unittest.TestCase):
-    def test_rpi_revision(self):
-        response = raw_input('\nIs this RPi board a revision 1 or 2 ? ')
-        self.assertEqual(int(response[0]), GPIO.RPI_REVISION)
+    def test_lmk_revision(self):
+        response = raw_input('\nIs this Lemaker board a revision 1.1 or 1.2 ? ')
+        self.assertEqual(int(response[0]), GPIO.LMK_REVISION)
 
     def test_gpio_version(self):
-        response = raw_input('\nRPi.GPIO version %s - is this correct (y/n) ? '%GPIO.VERSION).upper()
+        response = raw_input('\nLMK.GPIO version %s - is this correct (y/n) ? '%GPIO.VERSION).upper()
         self.assertEqual(response, 'Y')
 
 class TestGPIOFunction(unittest.TestCase):

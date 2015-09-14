@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -152,7 +152,7 @@ PWM_methods[] = {
 
 PyTypeObject PWMType = {
    PyVarObject_HEAD_INIT(NULL,0)
-   "RPi.GPIO.PWM",            // tp_name
+   "LMK.GPIO.PWM",            // tp_name
    sizeof(PWMObject),         // tp_basicsize
    0,                         // tp_itemsize
    (destructor)PWM_dealloc,   // tp_dealloc

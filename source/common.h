@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013-2014 Ben Croston
+Copyright (c) 2015 Lemaker Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -32,7 +32,9 @@ SOFTWARE.
 int gpio_mode;
 const int (*pin_to_gpio)[64];
 const int physToGpio_BP [64];
+const int physToGpio_GT [64];
 const int pinTobcm_BP [64];
+const int pinTobcm_GT [64];
 const int physToGpioR3 [64];
 
 int gpio_direction[64];
