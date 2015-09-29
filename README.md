@@ -10,7 +10,7 @@ https://github.com/LeMaker/LMK.GPIO.
     HiKey (TBD)
 
 ## Download
-    git clone https://github.com/LeMaker/LMK.GPIO_BP
+    git clone https://github.com/LeMaker/LMK.GPIO
 
 ## Installation
     sudo apt-get update
