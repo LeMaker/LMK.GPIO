@@ -71,11 +71,11 @@ const int physToGpio_GT [64] =
    64,     40,   //11(C0),      12(B8-PWM)
    65,    -1,   //13(C1),       14
    68,     25,   //15(C4),      16(A25)
-   -1,     41,   //17,          18(B9)
-   87,     -1,   //19(CE0),     20
-   89,     69,   //21(MOSI),    22(C5)
-   86,     51,   //23(SCLK),    24(B19)
-   -1,     88,   //25,          26(MISO)
+   -1,     70,   //17,          18(B9)
+   89,     -1,   //19(CE0),     20
+   88,     69,   //21(MOSI),    22(C5)
+   86,     87,   //23(SCLK),    24(B19)
+   -1,     51,   //25,          26(MISO)
    48,     46,   //27(B16),     28(B14)
    47,     -1,   //29(B15),     30
    42,     45,   //31(B10),     32(B13)      
@@ -92,16 +92,16 @@ const int pinTobcm_GT [64] =	//BCM MODE
 48,46,   //map to BCM GPIO0,1
 131,130,                //map to BCM GPIO2,3
 50,47,         //map to BCM GPIO4,5
-42,88,   //map to BCM GPIO6,7
-51,89,   //map to BCM GPIO8,9
-87,86,   //map to BCM GPIO10,11
+42,51,   //map to BCM GPIO6,7
+87,88,   //map to BCM GPIO8,9
+89,86,   //map to BCM GPIO10,11
 45,32,          //map to BCM GPIO12,13
 91,90,   //map to BCM GPIO14,15
 28,64,    //map to BCM GPIO16,17
 40,33,    //map to BCM GPIO18,19
 31,27,         //map to BCM GPIO20,21
 68,25, //map to BCM GPIO22,23
-41,69, //map to BCM GPIO24,25
+70,69, //map to BCM GPIO24,25
 34,65,  //map to BCM GPIO26,27
 -1,-1,	//map to BCM GPIO28,29
 -1,-1,	//map to BCM GPIO30,31
@@ -204,7 +204,7 @@ int is_valid_raw_port(int channel)
 		if (channel >= 128 && channel < 160) return 5; // PE
 	} else{
 		printf("Please use Banana Pro or LeMaker Guitar\n");
-                return;
+                return 0;
 	}
 	return 0;
 }

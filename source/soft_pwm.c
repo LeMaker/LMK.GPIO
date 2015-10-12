@@ -111,7 +111,6 @@ void *pwm_thread(void *threadarg)
 			printf("Please,set mode.\n");
 	    } else{
 	    	printf("Please use Banana Pro or LeMaker Guitar\n");
-		return;
 	    }
             full_sleep(&p->req_on);
         }
@@ -130,7 +129,6 @@ void *pwm_thread(void *threadarg)
 
             } else{
 		printf("Please use Banana Pro or LeMaker Guitar\n");
-		return;
             }
             full_sleep(&p->req_off);
         }
@@ -149,7 +147,6 @@ void *pwm_thread(void *threadarg)
 
     } else{
     	printf("Please use Banana Pro or LeMaker Guitar\n");
-	return;
     }
     remove_pwm(p->gpio);
     pthread_exit(NULL);
