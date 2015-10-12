@@ -95,7 +95,7 @@ void define_constants(PyObject *module)
 	PyModule_AddObject(module, "PG", Py_BuildValue("i", 192));
 	PyModule_AddObject(module, "PH", Py_BuildValue("i", 224));
 	PyModule_AddObject(module, "PI", Py_BuildValue("i", 256));
-	}else{
+	}else if(f_s500){
 	PyModule_AddObject(module, "PA", Py_BuildValue("i", 0));
         PyModule_AddObject(module, "PB", Py_BuildValue("i", 32));
         PyModule_AddObject(module, "PC", Py_BuildValue("i", 64));

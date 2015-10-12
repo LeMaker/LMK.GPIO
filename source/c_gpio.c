@@ -86,9 +86,12 @@ int setup(void)
 	//all the page must be 4kb for start
 	if(f_a20){
 		gpio_map = (uint32_t *)mmap( (caddr_t)gpio_mem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, GPIO_BASE_BP);
-	}else{ //add for guitar
+	}else if(f_s500){ //add for guitar
 		gpio_map = (uint32_t *)mmap( (caddr_t)gpio_mem , BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, S500_GPIO_BASE);
 		clk_map = (uint32_t *)mmap( (caddr_t)clk_mem , BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, S500_CLOCK_BASE);
+	}else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return;
 	}
 
 	if(lemakerDebug)
@@ -535,7 +538,7 @@ void setup_gpio(int gpio, int direction, int pud)//void sunxi_set_gpio_mode(int 
 		{
 			printf("line:%dgpio number error\n",__LINE__);
 		}
-	} else{ //add for guitar
+	} else if(f_s500){ //add for guitar
 		if(gpio == 42 || gpio == 45 || gpio == 46|| gpio == 47 || gpio == 48 || gpio == 50 || gpio == 51)
 		{//lvds port must be set digital function.The default function is LVDS ODD PAD.
 			phyaddr = gpio_map + (0x0044>>2);
@@ -608,6 +611,9 @@ void setup_gpio(int gpio, int direction, int pud)//void sunxi_set_gpio_mode(int 
 		{
 				//TODO
 		}
+	} else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return;
 	} 
 }
 
@@ -633,7 +639,7 @@ int gpio_function(int gpio)
 		regval &= 7;
 		if (lemakerDebug)
 			printf("read reg val: 0x%x\n",regval);
-	} else{ //add for guitar
+	} else if(f_s500){ //add for guitar
 		offset = 0;
 		//input
 		//GPIOA input enable:0x0004
@@ -668,6 +674,9 @@ int gpio_function(int gpio)
 
 		//other function
 		return 4;
+	} else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return -1;
 	}
 
 
@@ -705,7 +714,7 @@ void output_gpio(int gpio, int value)//void sunxi_digitalWrite(int pin, int valu
 			if (lemakerDebug)
 				printf("HIGH val set over reg val: 0x%x\n",regval);
 		}
-	} else{//add for guitar
+	} else if(f_s500){//add for guitar
 		phyaddr = gpio_map + (bank * 3) + 0x02; // +0x08 -> Output/Input Data Register
 		if (lemakerDebug)
 			printf("func:%s gpio:%d, value:%d bank:%d index:%d phyaddr:0x%x\n",__func__, gpio , value,bank,index,phyaddr);
@@ -723,6 +732,9 @@ void output_gpio(int gpio, int value)//void sunxi_digitalWrite(int pin, int valu
 				if (lemakerDebug)
 					printf("HIGH val set over reg val: 0x%x\n",regval);
 		}
+	} else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return;
 	}
 }
 
@@ -743,7 +755,7 @@ int input_gpio(int gpio)//int sunxi_digitalRead(int pin)
 		regval &= 1;
 		if (lemakerDebug)
 			printf("***** read reg val: 0x%x,bank:%d,index:%d,line:%d\n",regval,bank,index,__LINE__);
-	} else{ //add for guitar
+	} else if(f_s500){ //add for guitar
 
 		phyaddr = gpio_map + (bank * 3) + 0x02; // +0x08 -> Output/Input Data Register
 		if (lemakerDebug)
@@ -753,7 +765,11 @@ int input_gpio(int gpio)//int sunxi_digitalRead(int pin)
 		regval &= 0x1;
 		if (lemakerDebug)
 			printf("*****read %d read reg val: 0x%x,bank:%d,index:%d,line:%d\n",gpio,regval,bank,index,__LINE__);
-	}	
+	} else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return 1;
+	}
+	
 	return regval;
 }
 
@@ -763,8 +779,11 @@ void cleanup(void)
     // fixme - set all gpios back to input
 	if(f_a20){
 		munmap((caddr_t)gpio_map, BLOCK_SIZE);
-	} else{ //add for guitar
+	} else if(f_s500){ //add for guitar
 		munmap(0, BLOCK_SIZE);
+	} else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return;
 	}
     
 }

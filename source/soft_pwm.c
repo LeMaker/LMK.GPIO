@@ -103,9 +103,15 @@ void *pwm_thread(void *threadarg)
 	    if(f_a20){
             	output_gpio(*(pinTobcm_BP + p->gpio), 1);
 	    } else if(f_s500){
-		output_gpio(*(pinTobcm_GT + p->gpio), 1);
+		if(gpio_mode == BCM)
+			output_gpio(*(pinTobcm_GT + p->gpio), 1);
+		else if(gpio_mode == BOARD)
+			output_gpio(*(physToGpio_GT + p->gpio), 1);
+		else
+			printf("Please,set mode.\n");
 	    } else{
-		output_gpio(*(pinTobcm_BP + p->gpio), 1);
+	    	printf("Please use Banana Pro or LeMaker Guitar\n");
+		return;
 	    }
             full_sleep(&p->req_on);
         }
@@ -115,9 +121,16 @@ void *pwm_thread(void *threadarg)
 	    if(f_a20){
                 output_gpio(*(pinTobcm_BP + p->gpio), 0);
             } else if(f_s500){
-                output_gpio(*(pinTobcm_GT + p->gpio), 0);
+		if(gpio_mode == BCM)
+                        output_gpio(*(pinTobcm_GT + p->gpio), 0);
+                else if(gpio_mode == BOARD)
+                        output_gpio(*(physToGpio_GT + p->gpio), 0);
+                else
+                        printf("Please,set mode.\n");
+
             } else{
-                output_gpio(*(pinTobcm_BP + p->gpio), 0);
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+		return;
             }
             full_sleep(&p->req_off);
         }
@@ -127,9 +140,16 @@ void *pwm_thread(void *threadarg)
     if(f_a20){
     	output_gpio(*(pinTobcm_BP + p->gpio), 0);
     } else if(f_s500){
-	output_gpio(*(pinTobcm_GT + p->gpio), 0);
+	if(gpio_mode == BCM)
+        	output_gpio(*(pinTobcm_GT + p->gpio), 0);
+        else if(gpio_mode == BOARD)
+        	output_gpio(*(physToGpio_GT + p->gpio), 0);
+        else
+        	printf("Please,set mode.\n");
+
     } else{
-	output_gpio(*(pinTobcm_BP + p->gpio), 0);
+    	printf("Please use Banana Pro or LeMaker Guitar\n");
+	return;
     }
     remove_pwm(p->gpio);
     pthread_exit(NULL);

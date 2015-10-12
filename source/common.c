@@ -196,12 +196,15 @@ int is_valid_raw_port(int channel)
 		if (channel >= 192 && channel < 204) return 7; // PG
 		if (channel >= 224 && channel < 252) return 8; // PH
 		if (channel >= 256 && channel < 278) return 9; // PI
-	} else{ //add for guitar
+	} else if(f_s500){ //add for guitar
 		if (channel >= 0 && channel < 32) return 1; // PA
 		if (channel >= 32 && channel < 64) return 2; // PB
 		if (channel >= 64 && channel < 96) return 3; // PC
 		if (channel >= 96 && channel < 128) return 4; // PD
 		if (channel >= 128 && channel < 160) return 5; // PE
+	} else{
+		printf("Please use Banana Pro or LeMaker Guitar\n");
+                return;
 	}
 	return 0;
 }
@@ -230,9 +233,12 @@ int get_gpio_number(int channel, unsigned int *gpio,unsigned int *sys_gpio)
 			if(f_a20){
 			*gpio = *(*pin_to_gpio+channel);	//pin_to_gpio is initialized in py_gpio.c, the last several lines
 			*sys_gpio = *(physToGpioR3 + channel);
-			}else{//add for guitar
+			}else if(f_s500){ //add for guitar
 			*gpio = *(*pin_to_gpio+channel);        //pin_to_gpio is initialized in py_gpio.c, the last several lines
                         *sys_gpio = *(*pin_to_gpio + channel);
+			}else{
+			printf("Please use Banana Pro or LeMaker Guitar\n");
+                	return 3;
 			}
 		}
 	}
@@ -245,8 +251,8 @@ int get_gpio_number(int channel, unsigned int *gpio,unsigned int *sys_gpio)
 			*gpio = *(pinTobcm_GT + channel);
 			*sys_gpio = *(pinTobcm_GT + channel); 
 		} else {
-			*gpio = *(pinTobcm_BP + channel);
-			*sys_gpio = channel;
+			printf("Please use Banana Pro or LeMaker Guitar\n");
+                	return 3;
 		}
 	}
 	else if (gpio_mode == MODE_RAW)
@@ -274,11 +280,8 @@ int get_gpio_number(int channel, unsigned int *gpio,unsigned int *sys_gpio)
 					break;
 				}
 			} else{
-				if (*(pinTobcm_BP + i) == channel)
-				{
-					*sys_gpio = i;
-					break;
-				}
+				printf("Please use Banana Pro or LeMaker Guitar\n");
+                		return 3;
 			}
 		}
 	}
