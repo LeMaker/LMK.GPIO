@@ -21,6 +21,12 @@ https://github.com/LeMaker/LMK.GPIO.
     
 Please be attention that you need use both python and sudo pytohn to make the LMK.GPIO work well.
 
+## Remove
+    cd /usr/local/lib/python2.7/dist-packages/
+    sudo rm -r LMK
+    
+Note that the LMK library might be under /usr/lib/python2.7/dist-packages/, depending your system path setup. Remove the folder LMK and the python egg info file.
+
 ## Examples
 You can go to LeMaker wiki to see the basic examples: http://wiki.lemaker.org/LMK.GPIO
 
