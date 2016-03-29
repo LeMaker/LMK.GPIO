@@ -1,6 +1,6 @@
 LMK.GPIO README
 
-LMK.GPIO is a GPIO library that can support LeMaker SBC products, such as Banana Pro/Pi, LeMaker Guitar. In order to use convinient, we set most functions name to the same as the RPi.GPIO for Raspberry Pi.
+LMK.GPIO is a GPIO library that can support LeMaker SBC products, such as Banana Pro/Pi, LeMaker Guitar. In order to use convenient, we set most functions name to the same as the RPi.GPIO for Raspberry Pi.
 The LMK.GPIO API usage are the same to the [RPi.GPIO](https://pypi.python.org/pypi/RPi.GPIO).
 You can donwload the LMK.GPIO from:
 https://github.com/LeMaker/LMK.GPIO.
@@ -19,7 +19,7 @@ https://github.com/LeMaker/LMK.GPIO.
     python setup.py install                 
     sudo python setup.py install
     
-Please be attention that you need use both python and sudo pytohn to make the LMK.GPIO work well.
+Please be attention that you need use both python and sudo python to make the LMK.GPIO work well.
 
 ## Remove
     cd /usr/local/lib/python2.7/dist-packages/
