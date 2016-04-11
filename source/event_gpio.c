@@ -27,12 +27,15 @@ SOFTWARE.
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/time.h>
 #include "event_gpio.h"
 #include "c_gpio.h"
 #include "common.h"
 
 const char *stredge[4] = {"none", "rising", "falling", "both"};
+#define GPIO_LEN 5
+#define FILENAME_LEN 128
 
 struct gpios
 {
@@ -56,7 +59,7 @@ struct callback
 struct callback *callbacks = NULL;
 
 pthread_t threads;
-int event_occurred[64] = { 0 };
+int event_occurred[256] = { 0 };
 int thread_running = 0;
 int epfd = -1;
 
@@ -66,17 +69,18 @@ int epfd = -1;
 int gpio_export(unsigned int gpio)
 {
 	int fd, len;
-	char str_gpio[3];
+	char str_gpio[GPIO_LEN];
 
-D    if ((fd = open("/sys/class/gpio/export", O_WRONLY)) < 0)
+      if ((fd = open("/sys/class/gpio/export", O_WRONLY)) < 0)
 		return -1;
 
 	len = snprintf(str_gpio, sizeof(str_gpio), "%d", gpio);
 
-	if(lemakerDebug)
-		printf("\n /sys/class/gpio/export %d \n",gpio);
+	debug("\n /sys/class/gpio/export %d \n",gpio);
 
-	write(fd, str_gpio, len);
+	if (write(fd, str_gpio, len) < 0 )
+		return -1;
+		
 	close(fd);
 	return 0;
 }
@@ -85,16 +89,17 @@ D    if ((fd = open("/sys/class/gpio/export", O_WRONLY)) < 0)
 int gpio_unexport(unsigned int gpio)
 {
 	int fd, len;
-	char str_gpio[3];
+	char str_gpio[GPIO_LEN];
 
-D    if ((fd = open("/sys/class/gpio/unexport", O_WRONLY)) < 0)
+      if ((fd = open("/sys/class/gpio/unexport", O_WRONLY)) < 0)
 		return -1;
 
 	len = snprintf(str_gpio, sizeof(str_gpio), "%d", gpio);
-	if(lemakerDebug)
-		printf("\n /sys/class/gpio/unexport %d \n",gpio);
+	debug("\n /sys/class/gpio/unexport %d \n",gpio);
 
-	write(fd, str_gpio, len);
+	if(write(fd, str_gpio, len) < 0)
+		return -1;
+	
 	close(fd);
 	return 0;
 }
@@ -103,22 +108,24 @@ D    if ((fd = open("/sys/class/gpio/unexport", O_WRONLY)) < 0)
 int gpio_set_direction(unsigned int gpio, unsigned int in_flag)
 {
 	int fd;
-	char filename[33];
+	char filename[FILENAME_LEN];
 
-D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/direction", gpio);
-	if(lemakerDebug)
-		printf("\n /sys/class/gpio/gpio%d/direction \n", gpio);
+       snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/direction", gpio);
+
+	debug("\n /sys/class/gpio/gpio%d/direction \n", gpio);
 
 	if ((fd = open(filename, O_WRONLY)) < 0){
 	//printf("open file not succeed !\n");
 		return -1;
 	}
 
-	if (in_flag)
-		write(fd, "in", 3);
-	else
-		write(fd, "out", 4);
-
+	if (in_flag){
+		if(write(fd, "in", 3) < 0)
+			return -1;
+	}else{
+		if(write(fd, "out", 4) < 0)
+			return -1;
+	}
 	close(fd);  
     return 0;
 }
@@ -127,16 +134,17 @@ D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/direction", gp
 int gpio_set_edge(unsigned int gpio, unsigned int edge)
 {
 	int fd;
-	char filename[28];
+	char filename[FILENAME_LEN];
 
-D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/edge", gpio);
-	if(lemakerDebug)
-		printf("\n /sys/class/gpio/gpio%d/edge \n", gpio);
+       snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/edge", gpio);
+
+	debug("\n /sys/class/gpio/gpio%d/edge \n", gpio);
 
 	if ((fd = open(filename, O_WRONLY)) < 0)
 		return -1;
 
-	write(fd, stredge[edge], strlen(stredge[edge]) + 1);
+	if(write(fd, stredge[edge], strlen(stredge[edge]) + 1) < 0)
+		return -1;
 	close(fd);
 	return 0;
 }
@@ -145,9 +153,9 @@ D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/edge", gpio);
 int gpio_check(unsigned int gpio)
 {
 	int fd;
-	char filename[23];
+	char filename[FILENAME_LEN];
 
-D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d", gpio);
+       snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d", gpio);
 	if ((fd = open(filename, O_RDONLY)) < 0)
 	return -1;
 
@@ -159,17 +167,19 @@ D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d", gpio);
 int gpio_set_value(unsigned int gpio, unsigned int value)
 {
 	int fd;
-	char filename[29];
+	char filename[FILENAME_LEN];
 
-D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
+       snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
 	if ((fd = open(filename, O_WRONLY)) < 0)
 	return -1;
 
-	if (value)
-	write(fd, "1", 2);
-	else
-	write(fd, "0", 2);
-
+	if (value){
+		if(write(fd, "1", 2) < 0)
+			return -1;
+	}else{
+		if(write(fd, "0", 2) < 0)
+			return -1;
+	}
 	close(fd);
 	return 0;
 }
@@ -178,19 +188,15 @@ D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
 int gpio_get_value(unsigned int gpio)
 {
 	int fd;
-	char filename[29];
+	char filename[FILENAME_LEN];
 	char buf;
 
-D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
+       snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
 	if ((fd = open(filename, O_RDONLY)) < 0)
 		return -1;
 
 	if (read(fd, &buf, 1) != 1)
 	return -1;
-
-	#ifdef BAPI_DEBUG
-	printf("BAPI: __%d__(%s:%s) value = %c, %d\n",__LINE__,__FUNCTION__,__FILE__, buf, atoi(&buf));
-	#endif
 
 	close(fd);
 	return atoi(&buf);
@@ -200,19 +206,22 @@ D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
 int gpio_set_pull(unsigned int gpio, unsigned int value)
 {
 	int fd;
-	char filename[29];
+	char filename[FILENAME_LEN];
 
-D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/pull", gpio);
+       snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/pull", gpio);
 	if ((fd = open(filename, O_WRONLY)) < 0)
 		return -1;
 
-	if (value == PUD_DOWN) //pull down
-		write(fd, "down", 5);
-	else if (value == PUD_UP) //pull up
-		write(fd, "up", 3);
-	else //default == PUD_OFF, pull disable
-		write(fd, "disable", 8);
-
+	if (value == PUD_DOWN){ //pull down
+		if(write(fd, "down", 5) < 0)
+			return -1;
+	}else if (value == PUD_UP){ //pull up
+		if(write(fd, "up", 3) < 0)
+			return -1;
+	}else{ //default == PUD_OFF, pull disable
+		if(write(fd, "disable", 8) < 0)
+			return -1;
+	}
 	close(fd);
 	return 0;
 }
@@ -221,7 +230,7 @@ D    snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/pull", gpio);
 int open_value_file(unsigned int gpio)
 {
 	int fd;
-	char filename[29];
+	char filename[FILENAME_LEN];
 
 	// create file descriptor of value file
 	snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/value", gpio);
@@ -262,9 +271,9 @@ struct gpios *new_gpio(unsigned int gpio)
 {
     struct gpios *new_gpio;
 
-D    new_gpio = malloc(sizeof(struct gpios));
-    if (new_gpio == 0)
-        return NULL;  // out of memory
+    new_gpio = malloc(sizeof(struct gpios));
+    if (new_gpio == NULL)
+        return NULL;
 
     new_gpio->gpio = gpio;
     if (gpio_export(gpio) != 0) {
@@ -492,12 +501,11 @@ int gpio_event_added(unsigned int gpio)
     return 0;
 }
 
-
-int add_edge_detect(unsigned int gpio, unsigned int edge, unsigned int bouncetime)
 // return values:
 // 0 - Success
 // 1 - Edge detection already added
 // 2 - Other error
+int add_edge_detect(unsigned int gpio, unsigned int edge, unsigned int bouncetime)
 {
     pthread_t threads;
     struct epoll_event ev;

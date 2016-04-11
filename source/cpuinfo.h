@@ -20,4 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#define BANANAPI  0x1
+#define BANANAPRO 0x2
+#define LEMAKER_GUITAR 0x3
+
+char *get_cpuinfo_revision(char *revision);
 int get_lmk_revision(void);
+int is_a20_platform(void);
+int is_s500_platform(void);

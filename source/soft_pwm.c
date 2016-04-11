@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
@@ -27,9 +27,6 @@ SOFTWARE.
 #include "common.h"
 #include "soft_pwm.h"
 pthread_t threads;
-
-extern int f_a20;
-extern int f_s500;
 
 struct pwm
 {
@@ -94,58 +91,63 @@ void full_sleep(struct timespec *req)
 void *pwm_thread(void *threadarg)
 {
     struct pwm *p = (struct pwm *)threadarg;
-
+    
     while (p->running)
     {
-
         if (p->dutycycle > 0.0)
         {
-	    if(f_a20){
-            	output_gpio(*(pinTobcm_BP + p->gpio), 1);
-	    } else if(f_s500){
-		if(gpio_mode == BCM)
-			output_gpio(*(pinTobcm_GT + p->gpio), 1);
-		else if(gpio_mode == BOARD)
-			output_gpio(*(physToGpio_GT + p->gpio), 1);
-		else
-			printf("Please,set mode.\n");
-	    } else{
-	    	printf("Please use Banana Pro or LeMaker Guitar\n");
-	    }
+            if(is_a20_platform())
+            {
+                output_gpio(pinTobcm_BP[p->gpio], 1);
+            } 
+            else if(is_s500_platform())
+            {
+                output_gpio(p->gpio, 1);
+            }
+            else
+            {
+                printf("Please use Banana Pro or LeMaker Guitar\n");
+            }
+        
             full_sleep(&p->req_on);
         }
-
+        
         if (p->dutycycle < 100.0)
         {
-	    if(f_a20){
-                output_gpio(*(pinTobcm_BP + p->gpio), 0);
-            } else if(f_s500){
-		if(gpio_mode == BCM)
-                        output_gpio(*(pinTobcm_GT + p->gpio), 0);
-                else if(gpio_mode == BOARD)
-                        output_gpio(*(physToGpio_GT + p->gpio), 0);
-                else
-                        printf("Please,set mode.\n");
+            if(is_a20_platform())
+            {
+                output_gpio(pinTobcm_BP[p->gpio], 0);
+            } 
+            else if(is_s500_platform())
+            {
 
-            } else{
-		printf("Please use Banana Pro or LeMaker Guitar\n");
+                output_gpio(p->gpio, 0);
+            } 
+            else
+            {
+                printf("Please use Banana Pro or LeMaker Guitar\n");
             }
+            
             full_sleep(&p->req_off);
         }
     }
 
     // clean up
-    if(f_a20){
-    	output_gpio(*(pinTobcm_BP + p->gpio), 0);
-    } else if(f_s500){
-	if(gpio_mode == BCM)
-        	output_gpio(*(pinTobcm_GT + p->gpio), 0);
+    if(is_a20_platform())
+    {
+    	output_gpio(p->gpio, 0);
+    } 
+    else if(is_s500_platform())
+    {
+        if(gpio_mode == BCM)
+            output_gpio(p->gpio, 0);
         else if(gpio_mode == BOARD)
-        	output_gpio(*(physToGpio_GT + p->gpio), 0);
+            output_gpio(p->gpio, 0);
         else
-        	printf("Please,set mode.\n");
-
-    } else{
+            printf("Please,set mode.\n");
+    }
+    else
+    {
     	printf("Please use Banana Pro or LeMaker Guitar\n");
     }
     remove_pwm(p->gpio);

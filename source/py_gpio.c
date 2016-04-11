@@ -67,16 +67,16 @@ static int mmap_gpio_mem(void)
 // python function cleanup(channel=None)
 static PyObject *py_cleanup(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	int i;
+	int i = 0;
 	int found = 0,v = 0;
 	int channel = -666;
 	unsigned int gpio;
+    	unsigned int sys_gpio;
 	static char *kwlist[] = {"channel", NULL};
-    v = get_lmk_revision();
+	v = get_lmk_revision();
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist, &channel))
 		return NULL;
 
-	unsigned int sys_gpio;
 	if (channel != -666 && get_gpio_number(channel, &gpio, &sys_gpio))
 		return NULL;
 
@@ -86,17 +86,16 @@ static PyObject *py_cleanup(PyObject *self, PyObject *args, PyObject *kwargs)
          event_cleanup_all();
          
          // set everything back to input
-         for (i=0; i<64; i++) {
+         for (i=0; i<256; i++) {
             if (gpio_direction[i] != -1) {
-				printf("Clean %d \n",i);
-				if(v == 2){
+				debug("Clean %d \n",i);
+				if(v == BANANAPRO){
 					setup_gpio(*(pinTobcm_BP+i), INPUT, PUD_OFF);//take care
-				} else if(v == 3){
+				} else if(v == LEMAKER_GUITAR){
 					setup_gpio(*(pinTobcm_GT+i), INPUT, PUD_OFF);//take care
 				}
 				gpio_direction[i] = -1;
 				found = 1;
-				//printf("Clean Fnished %d \n",i);
             }
          }
       } else {
@@ -128,12 +127,11 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
 {
    unsigned int gpio;
    int channel, direction;
+   unsigned int sys_gpio;
    int pud = PUD_OFF + PY_PUD_CONST_OFFSET;
-   int initial = -1;
    static char *kwlist[] = {"channel", "direction", "pull_up_down", "initial", NULL};
-   int func;
-	
-
+   int initial = -1;
+   
    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|ii", kwlist, &channel, &direction, &pud, &initial))
       return NULL;
    // check module has been imported cleanly
@@ -142,8 +140,7 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
       PyErr_SetString(PyExc_RuntimeError, "Module not imported correctly!");
       return NULL;
    }
-
-   unsigned int sys_gpio;
+  
    if (get_gpio_number(channel, &gpio, &sys_gpio)){
       return NULL;
  
@@ -163,24 +160,15 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
       PyErr_SetString(PyExc_ValueError, "Invalid value for pull_up_down - should be either PUD_OFF, PUD_UP or PUD_DOWN");
       return NULL;
    }
-   if (mmap_gpio_mem())
-      return NULL;
-   func = gpio_function(gpio);
-#ifdef BAPI_DEBUG
-   if (gpio_warnings &&                             // warnings enabled and
-       ((func != 0 && func != 1) ||                 // (already one of the alt functions or
-       (gpio_direction[sys_gpio] == -1 && func == 1)))  // already an output not set from this program)
-   {
-      PyErr_WarnEx(NULL, "This channel is already in use, continuing anyway.  Use GPIO.setwarnings(False) to disable warnings.", 1);
-   }
-#else
-#endif
+   
    if (direction == OUTPUT && (initial == LOW || initial == HIGH))
    {
       output_gpio(gpio, initial);
    }
    setup_gpio(gpio, direction, pud);
+   
    gpio_direction[sys_gpio] = direction;
+   
    Py_RETURN_NONE;
 }
 
@@ -188,12 +176,12 @@ static PyObject *py_setup_channel(PyObject *self, PyObject *args, PyObject *kwar
 static PyObject *py_output_gpio(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel, value;
 
    if (!PyArg_ParseTuple(args, "ii", &channel, &value))
       return NULL;
 
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
 
@@ -214,13 +202,13 @@ static PyObject *py_output_gpio(PyObject *self, PyObject *args)
 static PyObject *py_input_gpio(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel;
    PyObject *value;
 
    if (!PyArg_ParseTuple(args, "i", &channel))
       return NULL;
   
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
 
@@ -254,7 +242,7 @@ static PyObject *py_setmode(PyObject *self, PyObject *args)
       return NULL;
    }
 
-   if (gpio_mode != BOARD && gpio_mode != BCM && gpio_mode != MODE_RAW)
+   if (gpio_mode != BOARD && gpio_mode != BCM)
    {
       PyErr_SetString(PyExc_ValueError, "An invalid mode was passed to setmode()");
       return NULL;
@@ -319,6 +307,7 @@ static int add_py_callback(unsigned int gpio, PyObject *cb_func)
 static PyObject *py_add_event_callback(PyObject *self, PyObject *args, PyObject *kwargs)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel;
    PyObject *cb_func;
    char *kwlist[] = {"gpio", "callback", NULL};
@@ -332,7 +321,6 @@ static PyObject *py_add_event_callback(PyObject *self, PyObject *args, PyObject 
       return NULL;
    }
 
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
     
@@ -359,6 +347,7 @@ static PyObject *py_add_event_callback(PyObject *self, PyObject *args, PyObject 
 static PyObject *py_add_event_detect(PyObject *self, PyObject *args, PyObject *kwargs)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel, edge, result;
    unsigned int bouncetime = 0;
    PyObject *cb_func = NULL;
@@ -373,7 +362,6 @@ static PyObject *py_add_event_detect(PyObject *self, PyObject *args, PyObject *k
       return NULL;
    }
 
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
 
@@ -383,15 +371,44 @@ static PyObject *py_add_event_detect(PyObject *self, PyObject *args, PyObject *k
       PyErr_SetString(PyExc_RuntimeError, "You must setup() the GPIO channel as an input first");
       return NULL;
    }
-
+  
+   //check channel whether support the event detected or not
+   if(is_a20_platform())
+   {
+       if(support_event_detect(gpio, gpioEdge_BP) < 0)
+      {
+         PyErr_SetString(PyExc_RuntimeError, "the pin doesn't support to detect the external event!");
+         return NULL;
+      }
+   }
+   else if(is_s500_platform())
+   {
+       if(support_event_detect(gpio, gpioEdge_GT) < 0)
+      {
+         PyErr_SetString(PyExc_RuntimeError, "the pin doesn't support to detect the external event!");
+         return NULL;
+      }        
+   }
+   
    // is edge valid value
    edge -= PY_EVENT_CONST_OFFSET;
-   if (edge != RISING_EDGE && edge != FALLING_EDGE && edge != BOTH_EDGE)
+   if(is_a20_platform())
    {
-      PyErr_SetString(PyExc_ValueError, "The edge must be set to RISING, FALLING or BOTH");
-      return NULL;
+       if (edge != RISING_EDGE && edge != FALLING_EDGE && edge != BOTH_EDGE)
+       {
+          PyErr_SetString(PyExc_ValueError, "The edge must be set to RISING, FALLING or BOTH");
+          return NULL;
+       }
    }
-
+   else if(is_s500_platform())  //s500 doesn't support the "BOTH" trigger mode.
+   {
+       if (edge != RISING_EDGE && edge != FALLING_EDGE)
+       {
+          PyErr_SetString(PyExc_ValueError, "The edge must be set to RISING and FALLING");
+          return NULL;
+       }    
+   }
+   
    if (check_gpio_priv())
       return NULL;
 	
@@ -418,6 +435,7 @@ static PyObject *py_add_event_detect(PyObject *self, PyObject *args, PyObject *k
 static PyObject *py_remove_event_detect(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel;
    struct py_callback *cb = py_callbacks;
    struct py_callback *temp;
@@ -426,7 +444,6 @@ static PyObject *py_remove_event_detect(PyObject *self, PyObject *args)
    if (!PyArg_ParseTuple(args, "i", &channel))
       return NULL;
 
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
 
@@ -461,12 +478,12 @@ static PyObject *py_remove_event_detect(PyObject *self, PyObject *args)
 static PyObject *py_event_detected(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel;
 
    if (!PyArg_ParseTuple(args, "i", &channel))
       return NULL;
 
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
 
@@ -480,13 +497,13 @@ static PyObject *py_event_detected(PyObject *self, PyObject *args)
 static PyObject *py_wait_for_edge(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel, edge, result;
    char error[30];
 
    if (!PyArg_ParseTuple(args, "ii", &channel, &edge))
       return NULL;
 
-	unsigned int sys_gpio;
    if (get_gpio_number(channel, &gpio, &sys_gpio))
       return NULL;
 
@@ -496,13 +513,43 @@ static PyObject *py_wait_for_edge(PyObject *self, PyObject *args)
       PyErr_SetString(PyExc_RuntimeError, "You must setup() the GPIO channel as an input first");
       return NULL;
    }
-
+   
+   //check channel whether support the event detected or not
+   if(is_a20_platform())
+   {
+       if(support_event_detect(gpio, gpioEdge_BP) < 0)
+      {
+         PyErr_SetString(PyExc_RuntimeError, "the pin doesn't support to detect the external event!");
+         return NULL;
+      }
+   }
+   else if(is_s500_platform())
+   {
+       if(support_event_detect(gpio, gpioEdge_GT) < 0)
+      {
+         PyErr_SetString(PyExc_RuntimeError, "the pin doesn't support to detect the external event!");
+         return NULL;
+      }        
+   }
+   
    // is edge a valid value?
    edge -= PY_EVENT_CONST_OFFSET;
-   if (edge != RISING_EDGE && edge != FALLING_EDGE && edge != BOTH_EDGE)
+  
+   if(is_a20_platform())
    {
-      PyErr_SetString(PyExc_ValueError, "The edge must be set to RISING, FALLING or BOTH");
-      return NULL;
+       if (edge != RISING_EDGE && edge != FALLING_EDGE && edge != BOTH_EDGE)
+       {
+          PyErr_SetString(PyExc_ValueError, "The edge must be set to RISING, FALLING or BOTH");
+          return NULL;
+       }
+   }
+   else if(is_s500_platform())  //s500 doesn't support the "BOTH" trigger mode.
+   {
+       if (edge != RISING_EDGE && edge != FALLING_EDGE)
+       {
+          PyErr_SetString(PyExc_ValueError, "The edge must be set to RISING and FALLING");
+          return NULL;
+       }    
    }
 
    if (check_gpio_priv())
@@ -528,32 +575,31 @@ static PyObject *py_wait_for_edge(PyObject *self, PyObject *args)
 }
 
 // python function value = gpio_function(channel)
-
 static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 {
    unsigned int gpio;
+   unsigned int sys_gpio;
    int channel;
    int f,v;
    PyObject *func;
-
+  
    if (!PyArg_ParseTuple(args, "i", &channel))
       return NULL;
 
-	unsigned int sys_gpio;
+
    if (get_gpio_number(channel, &gpio, &sys_gpio))
        return NULL;
 
-   if (mmap_gpio_mem())
-      return NULL;
    v = get_lmk_revision();
    f = gpio_function(gpio);
-//printf("### %s: f=%d, gpio=%d ###\n",__func__, f, gpio);
+   debug("### %s: f=%d, gpio=%d ###\n",__func__, f, gpio);
+
      switch (f)
 	{
 		case 0 : f = INPUT; break;
 		case 1 : f = OUTPUT; break;
 		// ALT 0
-		case 4 :if(v == 2){ //a20
+		case 4 :if(v == BANANAPRO){ //a20
 			 switch (gpio)
 				{
 					case 257 :
@@ -573,7 +619,7 @@ static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 					//case 29 : f = I2C; break;
 					default : f = MODE_UNKNOWN; break;
 				}
-			}else if(v == 3) { //add for guitar
+			}else if(v == LEMAKER_GUITAR) { //add for guitar
 			switch (gpio)
                                 {
                                         case 131 : //GPIOE3
@@ -609,6 +655,7 @@ static PyObject *py_gpio_function(PyObject *self, PyObject *args)
 	} 
 	
    func = Py_BuildValue("i", f);
+   
    return func;
 }
 
@@ -663,7 +710,8 @@ PyMODINIT_FUNC initGPIO(void)
 {
    int i;
    PyObject *module = NULL;
-
+   char cpuRev[1024] = {'\0'};
+   
 #if PY_MAJOR_VERSION > 2
    if ((module = PyModule_Create(&lmkgpiomodule)) == NULL)
       return NULL;
@@ -671,16 +719,22 @@ PyMODINIT_FUNC initGPIO(void)
    if ((module = Py_InitModule3("LMK.GPIO", lmk_gpio_methods, moduledocstring)) == NULL)
       return;
 #endif
-   revision = get_lmk_revision();
 
+   if (get_cpuinfo_revision(cpuRev) == NULL)
+#if PY_MAJOR_VERSION > 2
+	return NULL;
+#else
+	return;
+#endif
+   
+    revision = get_lmk_revision();
+    debug("BOARD: revision(%d)\n",revision);
+	
    define_constants(module);
 
-   for (i=0; i<64; i++)
+   for (i=0; i<256; i++)
       gpio_direction[i] = -1;
 
-   // detect board revision and set up accordingly
-   revision = get_lmk_revision();
-   printf("BOARD: revision(%d)\n",revision);
    if (revision == -1)
    {
       PyErr_SetString(PyExc_RuntimeError, "This module can only be run on a Raspberry Pi!");
@@ -690,14 +744,8 @@ PyMODINIT_FUNC initGPIO(void)
 #else
       return;
 #endif
-   } else if (revision == 1) {
-      pin_to_gpio = NULL;
-   } else if (revision == 2){ // assume revision 2
-      pin_to_gpio = &physToGpio_BP;			//here is the 'pin_to_gpio' initialization
-   } else {
-      pin_to_gpio = &physToGpio_GT;
-   }
-
+   } 
+   
    lmk_revision = Py_BuildValue("i", revision);
    PyModule_AddObject(module, "LMK_REVISION", lmk_revision);
 
@@ -709,9 +757,8 @@ PyMODINIT_FUNC initGPIO(void)
 #else
       return;
 #endif
+    }
 
-
-}
    Py_INCREF(&PWMType);
    PyModule_AddObject(module, "PWM", (PyObject*)&PWMType);
 
@@ -719,6 +766,15 @@ PyMODINIT_FUNC initGPIO(void)
       PyEval_InitThreads();
 
    }
+   
+   //Initialized only once
+    if (mmap_gpio_mem())
+#if PY_MAJOR_VERSION > 2
+      return NULL;
+#else
+      return;
+#endif
+	
    // register exit functions - last declared is called first
    if (Py_AtExit(cleanup) != 0)
    {

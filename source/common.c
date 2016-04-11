@@ -29,9 +29,6 @@ int setup_error = 0;
 int module_setup = 0;
 int revision = -1;
 
-extern int f_a20;
-extern int f_s500;
-
 const int physToGpio_BP [64] =		//BOARD MODE
 {
 	-1, // 0
@@ -58,6 +55,57 @@ const int physToGpio_BP [64] =		//BOARD MODE
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //41-> 55
 	-1, -1, -1, -1, -1, -1, -1, -1 // 56-> 63
 } ;
+
+const int pinTobcm_BP [64] =	//BCM MODE
+{
+	257,256, //map to BCM GPIO0,1
+	53,52, //map to BCM GPIO2,3
+	226,35, //map to BCM GPIO4,5
+	277,270, //map to BCM GPIO6,7
+	266,269, //map to BCM GPIO8,9
+	268,267, //map to BCM GPIO10,11
+	276,45, //map to BCM GPIO12,13
+	228,229, //map to BCM GPIO14,15
+	38,275, //map to BCM GPIO16,17
+	259,39, //map to BCM GPIO18,19
+	44, 40, //map to BCM GPIO20,21
+	273,244, //map to BCM GPIO22,23
+	245,272, //map to BCM GPIO24,25
+	37, 274, //map to BCM GPIO26,27
+	-1,-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 28... 43
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //44... 59
+	-1, -1, -1, -1 // ...63
+} ;
+
+const int physToGpioR3 [64] =//head num map to BCMpin
+{
+	-1, // 0
+	-1, -1, // 1, 2
+	2, -1,
+	3, -1,
+	4, 14,
+	-1, 15,
+	17, 18,
+	27, -1,
+	22, 23,
+	-1, 24,
+	10, -1,
+	9, 25,
+	11, 8,
+	-1, 7, // 25, 26
+	0, 1, //27, 28
+	5, -1, //29, 30
+	6, 12, //31, 32
+	13, -1, //33, 34
+	19, 16, //35, 36
+	26, 20, //37, 38
+	-1, 21, //39, 40
+	// Padding:
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // ... 56
+	-1, -1, -1, -1, -1, -1, -1, // ... 63
+} ;
+
+const int gpioEdge_BP[15] = {226,228,229,275,274,273,244, 245,268,269,272,267,266,270,-1};  //'P7 P8 P10 P11 P13 P15 P16 P18 P19 P21 P22 P23 P24 P26' on 40-Pin Header of the BananaPro
 
 //add for guitar
 const int physToGpio_GT [64] =
@@ -114,56 +162,9 @@ const int pinTobcm_GT [64] =	//BCM MODE
 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //44... 59
 -1, -1, -1, -1 // ...63
 } ;
+
+const int gpioEdge_GT[10] = {91, 90, 40, 65, 68, 25, 69, 89, 86,-1};  //'P8 P10 P12 P13 P15 P16 P22 P19 P23' on 40-Pin Header of the LeMaker Guitar
 //end
-
-const int pinTobcm_BP [64] =	//BCM MODE
-{
-	257,256, //map to BCM GPIO0,1
-	53,52, //map to BCM GPIO2,3
-	226,35, //map to BCM GPIO4,5
-	277,270, //map to BCM GPIO6,7
-	266,269, //map to BCM GPIO8,9
-	268,267, //map to BCM GPIO10,11
-	276,45, //map to BCM GPIO12,13
-	228,229, //map to BCM GPIO14,15
-	38,275, //map to BCM GPIO16,17
-	259,39, //map to BCM GPIO18,19
-	44, 40, //map to BCM GPIO20,21
-	273,244, //map to BCM GPIO22,23
-	245,272, //map to BCM GPIO24,25
-	37, 274, //map to BCM GPIO26,27
-	-1,-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 28... 43
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //44... 59
-	-1, -1, -1, -1 // ...63
-} ;
-const int physToGpioR3 [64] =//head num map to BCMpin
-{
-	-1, // 0
-	-1, -1, // 1, 2
-	2, -1,
-	3, -1,
-	4, 14,
-	-1, 15,
-	17, 18,
-	27, -1,
-	22, 23,
-	-1, 24,
-	10, -1,
-	9, 25,
-	11, 8,
-	-1, 7, // 25, 26
-	0, 1, //27, 28
-	5, -1, //29, 30
-	6, 12, //31, 32
-	13, -1, //33, 34
-	19, 16, //35, 36
-	26, 20, //37, 38
-	-1, 21, //39, 40
-	// Padding:
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // ... 56
-	-1, -1, -1, -1, -1, -1, -1, // ... 63
-} ;
-
 
 int check_gpio_priv(void)
 {
@@ -186,7 +187,7 @@ int check_gpio_priv(void)
 
 int is_valid_raw_port(int channel)
 {
-	if(f_a20){
+	if(is_a20_platform()){
 		if (channel >= 0 && channel < 18) return 1; // PA
 		if (channel >= 32 && channel < 56) return 2; // PB
 		if (channel >= 64 && channel < 89) return 3; // PC
@@ -196,7 +197,7 @@ int is_valid_raw_port(int channel)
 		if (channel >= 192 && channel < 204) return 7; // PG
 		if (channel >= 224 && channel < 252) return 8; // PH
 		if (channel >= 256 && channel < 278) return 9; // PI
-	} else if(f_s500){ //add for guitar
+	} else if(is_s500_platform()){ //add for guitar
 		if (channel >= 0 && channel < 32) return 1; // PA
 		if (channel >= 32 && channel < 64) return 2; // PB
 		if (channel >= 64 && channel < 96) return 3; // PC
@@ -223,77 +224,86 @@ int get_gpio_number(int channel, unsigned int *gpio,unsigned int *sys_gpio)
 	// convert channel to gpio
 	if (gpio_mode == BOARD)
 	{
-		if (*(*pin_to_gpio+channel) == -1)
+		if(is_a20_platform())
 		{
-			PyErr_SetString(PyExc_ValueError, "The channel sent is invalid on a Banana Pi");
-			return 5;
-		} 
-		else 
+			if ((*(physToGpio_BP+channel) == -1) || (*(physToGpioR3+channel) == -1))
+			{
+				PyErr_SetString(PyExc_ValueError, "The channel sent is invalid on a Banana Pro");
+				return 5;
+			} 
+			*gpio = *(physToGpio_BP+channel);	//pin_to_gpio is initialized in py_gpio.c, the last several lines
+			*sys_gpio = *(physToGpioR3 + channel);			
+		}
+		else if(is_s500_platform())  //add for guitar
 		{
-			if(f_a20){
-			*gpio = *(*pin_to_gpio+channel);	//pin_to_gpio is initialized in py_gpio.c, the last several lines
-			*sys_gpio = *(physToGpioR3 + channel);
-			}else if(f_s500){ //add for guitar
-			*gpio = *(*pin_to_gpio+channel);        //pin_to_gpio is initialized in py_gpio.c, the last several lines
-                        *sys_gpio = *(*pin_to_gpio + channel);
-			}else{
+			if (*(physToGpio_GT+channel) == -1)
+			{
+				PyErr_SetString(PyExc_ValueError, "The channel sent is invalid on a Lemaker Guitar");
+				return 5;
+			} 
+			
+			*gpio = *(physToGpio_GT+channel);        //pin_to_gpio is initialized in py_gpio.c, the last several lines
+			*sys_gpio = *(physToGpio_GT + channel);
+		}
+		else
+		{
 			printf("Please use Banana Pro or LeMaker Guitar\n");
-                	return 3;
-			}
+			return 3;
 		}
 	}
 	else if (gpio_mode == BCM)
 	{
-		if(f_a20){
+		if(is_a20_platform())
+		{
+			if (*(pinTobcm_BP+channel) == -1 )
+			{
+				PyErr_SetString(PyExc_ValueError, "The channel sent is invalid on a Banana Pro");
+				return 5;
+			} 
 			*gpio = *(pinTobcm_BP + channel);
 			*sys_gpio = channel;
-		} else if(f_s500){ //add for guitar
+		} 
+		else if(is_s500_platform())  //add for guitar
+		{
+			if (*(pinTobcm_GT+channel) == -1 )
+			{
+				PyErr_SetString(PyExc_ValueError, "The channel sent is invalid on a Lemaker Guitar");
+				return 5;
+			} 
 			*gpio = *(pinTobcm_GT + channel);
 			*sys_gpio = *(pinTobcm_GT + channel); 
-		} else {
+		} 
+		else 
+		{
 			printf("Please use Banana Pro or LeMaker Guitar\n");
                 	return 3;
-		}
-	}
-	else if (gpio_mode == MODE_RAW)
-	{
-		if (!is_valid_raw_port(channel))
-		{
-			PyErr_SetString(PyExc_ValueError, "The channel sent does not exist");
-			return 5;
-		}
-		*gpio = channel;
-		
-		unsigned int i;
-		for (i = 0; i < 64; i++)
-		{
-			if(f_a20){
-				if (*(pinTobcm_BP + i) == channel)
-				{
-					*sys_gpio = i;
-					break;
-				}
-			} else if(f_s500){
-				if (*(pinTobcm_GT + i) == channel) //add for guitar
-				{
-					*sys_gpio = i;
-					break;
-				}
-			} else{
-				printf("Please use Banana Pro or LeMaker Guitar\n");
-                		return 3;
-			}
 		}
 	}
 	else 
 	{
 		// setmode() has not been run
-		PyErr_SetString(PyExc_RuntimeError, "Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM) or GPIO.setmode(GPIO.RAW)");
+		PyErr_SetString(PyExc_RuntimeError, "Please set pin numbering mode using GPIO.setmode(GPIO.BOARD)");
 		return 3;
 	}
 
-	if(lemakerDebug)
-		printf("GPIO = %d,sys_gpio = %d\n", *gpio,*sys_gpio);
+	debug("GPIO = %d,sys_gpio = %d\n", *gpio,*sys_gpio);
 	
 	return 0;
+}
+
+int support_event_detect(int gpio, const int *gpioEdge)
+{
+    int i = 0;
+    
+    if(NULL == gpioEdge)
+        return -1;
+
+    while(*(gpioEdge + i) != -1) 
+    {
+        if(gpio == *(gpioEdge + i))
+            return 0;
+        i++;
+    }
+    
+    return -1;
 }

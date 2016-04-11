@@ -11,21 +11,8 @@ testPinOnGt = 8   #For LeMaker Guitar
 testPinonBP = 18  #For BananaPro
 
 GPIO.setmode(GPIO.BOARD)
-
-def testEventDetect(pin, trigger):
-	switchCnt = 0	
-	GPIO.setup(pin, GPIO.IN, GPIO.PUD_UP)
-
-	GPIO.add_event_detect(pin, trigger)
-
-	while switchCnt < 2:   
-		if GPIO.event_detected(pin):
-			switchCnt += 1
-			print 'The event has been detected'
-			print "\n value_%d = %d\n" %(pin,GPIO.input(pin))
-
-	GPIO.remove_event_detect(pin)
-
-testEventDetect(testPinOnGt, GPIO.RISING)  # add rising edge detection on a channel
+GPIO.setup(testPinOnGt, GPIO.IN, GPIO.PUD_UP)
+if None == GPIO.wait_for_edge(testPinOnGt, GPIO.RISING):
+	print "specified edge detected"
 
 GPIO.cleanup()

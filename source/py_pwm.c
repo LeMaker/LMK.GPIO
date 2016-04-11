@@ -39,16 +39,16 @@ static int PWM_init(PWMObject *self, PyObject *args, PyObject *kwds)
 {
     int channel;
     float frequency;
-
+    unsigned int tempt_gpio;
+    
     if (!PyArg_ParseTuple(args, "if", &channel, &frequency))
         return -1;
 
     // convert channel to gpio
-    unsigned int tempt_gpio;
     if (get_gpio_number(channel, &tempt_gpio, &(self->gpio)))
         return -1;
 
-//printf("pwm_init self->gpio = %d\n",self->gpio);	//OK
+    debug("pwm_init self->gpio = %d\n",self->gpio);
 
     // ensure channel set as output
     if (gpio_direction[self->gpio] != OUTPUT)
@@ -65,7 +65,10 @@ static int PWM_init(PWMObject *self, PyObject *args, PyObject *kwds)
 
     self->freq = frequency;
 
+    debug("self->gpio = %d and self->freq = %f\n", self->gpio, self->freq);
+
     pwm_set_frequency(self->gpio, self->freq);
+    
     return 0;
 }
 

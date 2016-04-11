@@ -27,6 +27,30 @@ SOFTWARE.
 int f_a20=0;
 int f_s500=0;
 
+int is_a20_platform(void)
+{
+	return (1 == f_a20) ? 1 : 0;
+}
+
+int is_s500_platform(void)
+{
+	return(1== f_s500) ? 1 : 0;
+}
+
+int get_lmk_revision(void)
+{
+	if (is_a20_platform()) 
+       {
+		return BANANAPRO;
+	} 
+       else if (is_s500_platform())
+       {
+		return LEMAKER_GUITAR;
+	}
+	
+	return -1;
+}
+
 char *get_cpuinfo_revision(char *revision)
 {
 	FILE *fp;
@@ -38,17 +62,18 @@ char *get_cpuinfo_revision(char *revision)
 		return 0;
 
 	while(!feof(fp)) {
-		fgets(buffer, sizeof(buffer) , fp);
-		sscanf(buffer, "Hardware	: %s", hardware);
-		if (strcmp(hardware, "sun7i") == 0) {
-			f_a20=1;
-			findID = 1;
-			//printf("BAPI: Banana Pi!!\n");
-		}else if (strcmp(hardware, "gs705a") == 0){
-			f_s500 = 1;
-			findID = 1;
+		if(fgets(buffer, sizeof(buffer) , fp) != NULL)
+		{
+			sscanf(buffer, "Hardware	: %s", hardware);
+			if (strcmp(hardware, "sun7i") == 0) {
+				f_a20=1;
+				findID = 1;
+			}else if (strcmp(hardware, "gs705a") == 0){
+				f_s500 = 1;
+				findID = 1;
+			}
+			sscanf(buffer, "Revision	: %s", revision);
 		}
-		sscanf(buffer, "Revision	: %s", revision);
 	}
 	fclose(fp);
 
@@ -58,16 +83,3 @@ char *get_cpuinfo_revision(char *revision)
 	return revision;
 }
 
-int get_lmk_revision(void)
-{
-	char revision[1024] = {'\0'};
-
-	if (get_cpuinfo_revision(revision) == NULL)
-		return -1;
-
-	if (f_a20) {		//bananapi		1
-		return 2;//bananapi pro	2
-	} else if (f_s500){
-		return 3;//guitar 3
-	}
-}

@@ -32,15 +32,6 @@ You can go to LeMaker wiki to see the basic examples: http://wiki.lemaker.org/LM
 
 And the source directory test also has many demo.
 
-## Extra
-This version supports a new addressing mode "RAW" which enables you to use any GPIO pin. Below is an example which sets PD10 (which is pin 29 on the LCD connector) to a high level.
-
-    import LMK.GPIO as GPIO
-    GPIO.setmode(GPIO.RAW)
-    GPIO.setup(GPIO.PD+10, GPIO.OUT)
-    GPIO.output(GPIO.PD+10, 1)
-
-
 Thanks!
 
 LeMaker Team
